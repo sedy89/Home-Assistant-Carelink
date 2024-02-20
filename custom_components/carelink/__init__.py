@@ -21,6 +21,7 @@ from .const import (
     CLIENT,
     UPLOADER,
     DOMAIN,
+    SCAN_INTERVAL,
     COORDINATOR,
     UNAVAILABLE,
     DEVICE_PUMP_MODEL,
@@ -82,8 +83,6 @@ PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BINARY_SENSOR]
 
 _LOGGER = logging.getLogger(__name__)
 
-SCAN_INTERVAL = timedelta(seconds=60)
-
 
 def convert_date_to_isodate(date):
     date_iso = re.sub("\.\d{3}Z$", "+00:00", date)
@@ -98,13 +97,31 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     config = entry.data
     patientId = None
+    cl_token = None
+    cl_refresh_token = None
+    cl_client_id = None
+    cl_client_secret = None
+    cl_mag_identifier = None
 
     if "patientId" in config:
         patientId = config["patientId"]
+    if "cl_token" in config:
+        cl_token = config["cl_token"]
+    if "cl_refresh_token" in config:
+        cl_refresh_token = config["cl_refresh_token"]
+    if "cl_client_id" in config:
+        cl_client_id = config["cl_client_id"]
+    if "cl_client_secret" in config:
+        cl_client_secret = config["cl_client_secret"]
+    if "cl_mag_identifier" in config:
+        cl_mag_identifier = config["cl_mag_identifier"]
 
     carelink_client = CarelinkClient(
-        config["country"],
-        config["token"],
+        cl_token,
+        cl_refresh_token,
+        cl_client_id,
+        cl_client_secret,
+        cl_mag_identifier,
         patientId
     )
 
@@ -117,7 +134,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
         hass.data.setdefault(DOMAIN, {})[entry.entry_id].update({UPLOADER: nightscout_uploader})
 
-    coordinator = CarelinkCoordinator(hass, entry, update_interval=SCAN_INTERVAL)
+    coordinator = CarelinkCoordinator(hass, entry, update_interval=timedelta(seconds=config[SCAN_INTERVAL]))
 
     await coordinator.async_config_entry_first_refresh()
 
@@ -163,9 +180,6 @@ class CarelinkCoordinator(DataUpdateCoordinator):
         recent_data = await self.client.get_recent_data()
         if recent_data is None:
             recent_data = dict()
-        else:
-            if self.uploader:
-                await self.uploader.send_recent_data(recent_data)
         try:
             if recent_data is not None and "clientTimeZoneName" in recent_data:
                 client_timezone = recent_data["clientTimeZoneName"]
@@ -187,6 +201,10 @@ class CarelinkCoordinator(DataUpdateCoordinator):
             timezone = ZoneInfo("Europe/London")
 
         _LOGGER.debug("Using timezone %s", DEFAULT_TIME_ZONE)
+
+        # nightscout uploader
+        if self.uploader:
+            await self.uploader.send_recent_data(recent_data, timezone)
 
         recent_data["sLastSensorTime"] = recent_data.setdefault("sLastSensorTime", "")
         recent_data["activeInsulin"] = recent_data.setdefault("activeInsulin", {})
