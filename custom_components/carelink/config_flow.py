@@ -27,7 +27,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Optional("patientId"): str,
         vol.Optional("nightscout_url"): str,
         vol.Optional("nightscout_api"): str,
-        vol.Optional(SCAN_INTERVAL): vol.All(vol.Coerce(int), vol.Range(min=30, max=300)),
+        vol.Optional(SCAN_INTERVAL, default=60): vol.All(vol.Coerce(int), vol.Range(min=30, max=300)),
     }
 )
 

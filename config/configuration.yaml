@@ -1,7 +1,4 @@
 
-# Loads default set of integrations. Do not remove.
-#default_config:
-
 # Load frontend themes from the themes folder
 frontend:
   themes: !include_dir_merge_named themes
@@ -10,8 +7,3 @@ logger:
   default: info
   logs:
     custom_components.carelink: debug
-
-debugpy:
-   start: true
-   wait: false
-   port: 5678

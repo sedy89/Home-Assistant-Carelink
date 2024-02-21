@@ -96,38 +96,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
 
     config = entry.data
-    patientId = None
-    cl_token = None
-    cl_refresh_token = None
-    cl_client_id = None
-    cl_client_secret = None
-    cl_mag_identifier = None
-
-    if "patientId" in config:
-        patientId = config["patientId"]
-    if "cl_token" in config:
-        cl_token = config["cl_token"]
-    if "cl_refresh_token" in config:
-        cl_refresh_token = config["cl_refresh_token"]
-    if "cl_client_id" in config:
-        cl_client_id = config["cl_client_id"]
-    if "cl_client_secret" in config:
-        cl_client_secret = config["cl_client_secret"]
-    if "cl_mag_identifier" in config:
-        cl_mag_identifier = config["cl_mag_identifier"]
 
     carelink_client = CarelinkClient(
-        cl_token,
-        cl_refresh_token,
-        cl_client_id,
-        cl_client_secret,
-        cl_mag_identifier,
-        patientId
+        config["cl_token"],
+        config["cl_refresh_token"],
+        config["cl_client_id"],
+        config["cl_client_secret"],
+        config["cl_mag_identifier"],
+        config["patientId"]
     )
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {CLIENT: carelink_client}
 
-    if "nightscout_url" in config and "nightscout_api" in config:
+    if config["nightscout_url"] and config["nightscout_api"]:
         nightscout_uploader = NightscoutUploader(
             config["nightscout_url"],
             config["nightscout_api"]

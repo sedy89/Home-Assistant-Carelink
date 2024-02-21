@@ -153,3 +153,5 @@ cython_debug/
 
 *.DS_Store
 /custom_components/carelink/auth.json
+config/**
+!config/configuration.yaml
