@@ -28,10 +28,10 @@ Copy the `custom_components/carelink` to your `custom_components` folder. Reboot
 
 ## Integration Setup
 
-### Authentification File/Information
+### Carelink Login Data
 The needed information for the authentification process can either be provided as file (=logindata.json), or entered during the initial setup of the integration.
 #### Get the data
-The Home Assistant Carelink Integration needs the initial login data stored in the `logindata.json` file. This file is created by running the login script on a PC with a screen.
+The Home Assistant Carelink Integration needs the initial login data stored in the `logindata.json` file. This file can be created **by running the login script on a PC with a screen**.
 The login script from [@ondrej1024](https://github.com/ondrej1024)'s Carelink Python API, written by @palmarci (Pal Marci), was slightly modified and can be found here ["carelink_carepartner_api_login.py"](https://raw.githubusercontent.com/sedy89/carelink-python-client/main/carelink_carepartner_api_login.py).
 
 Simply run:
@@ -39,7 +39,7 @@ Simply run:
 python carelink_carepartner_api_login.py 
 ```
 
-You might need to install the following Python packages to satisfy the scripts dependencies:
+You might need to install the following Python packages to satisfy the script's dependencies:
 
 ```
 - requests
@@ -47,15 +47,24 @@ You might need to install the following Python packages to satisfy the scripts d
 - seleniumwire (pip install selenium-wire)
 ```
 
-The script opens a Firefox web browser with the Carelink login page. You have to provide your Carelink patients or follower credentials and solve the reCapcha. On successful completion of the login the data file will be created.
+The script opens a Firefox web browser with the Carelink login page. You have to provide your Carelink patients or follower credentials (recommended) and solve the reCapcha.
+On successful completion of the login, the data file will be created with the following structure:
+
 ![grafik](https://github.com/sedy89/Home-Assistant-Carelink/assets/65983953/35a60542-03fc-4deb-a14c-c96b0155bdd4)
 
 #### Provide the data
-The content of the `logindata.json` file can be copied and used during the setup of the HA Carelink integration.
+Either the content of the `logindata.json` file can be taken over into the setup of the HA Carelink integration, or the entire file can be uploaded into the custom_componend/carelink folder (recommended).
 
 ![grafik](https://github.com/sedy89/Home-Assistant-Carelink/assets/65983953/0a1d8773-7905-4fec-9bff-b3a0f01817b9)
 
-The Home Assistant Carelink Integration reads this file from the local folder and it will take care of refreshing automatically the login data when it expires. It should be able to do so within one week of the last refresh.
+All parameters during setup are optional and a provided file will have a higher priority and overwrite the manual configuration.
+If the file was copied to `custom_components/carelink` before the integration setup was started in Home Assistant, all parameters during the setup can stay empty.
+With those information, the Home Assistant Carelink Integration will be able to automatically refresh the login data when it expires.
+It should be able to do so within one week of the last refresh.
+
+### Scan Interval
+The scan interval of the integration can be configured during the integration setup.
+User can configure anything between 30 and 300 seconds. Default is 60 seconds.
 
 ### Nightscout
 To use the Nightscout uploader, it is mandatory to provide the Nightscout URL and the Nightscout API secret.
