@@ -45,6 +45,7 @@ import requests
 
 import OpenSSL
 from seleniumwire import webdriver
+from selenium.webdriver.firefox.options import Options
 
 
 def setup_logging():
@@ -98,7 +99,10 @@ def reformat_csr(csr):
     return csr
 
 def do_captcha(url, redirect_url):
-    driver = webdriver.Firefox()
+    options = Options()
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    driver = webdriver.Firefox(options=options)
     driver.get(url)
 
     while True:
