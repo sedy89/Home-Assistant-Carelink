@@ -108,7 +108,7 @@ class NightscoutUploader:
         return result
 
     def __getDataStringFromIso(self, time, tz):
-        dt = datetime.fromisoformat(time.replace(".000-00:00", ""))
+        dt = datetime.fromisoformat(time.replace(".000-00:00", "").replace(".000Z", ""))
         dt = dt.astimezone(tz)
         timestamp = dt.timestamp()
         date = int(timestamp * 1000)
