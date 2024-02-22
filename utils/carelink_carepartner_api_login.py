@@ -42,10 +42,13 @@ from http.client import HTTPConnection
 import secrets
 from time import sleep
 import requests
+import platform
+import sys
 
 import OpenSSL
 from seleniumwire import webdriver
 from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.service import Service
 
 
 def setup_logging():
@@ -102,7 +105,16 @@ def do_captcha(url, redirect_url):
     options = Options()
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-    driver = webdriver.Firefox(options=options)
+    driver = None
+    if platform.system() == 'Linux':
+        geckodriver_path = "/snap/bin/geckodriver"  # path to your geckodriver
+        driver_service = Service(executable_path=geckodriver_path)
+        driver = webdriver.Firefox(options=options, service=driver_service)
+    elif platform.system() == 'Windows':
+        driver = webdriver.Firefox(options=options)
+    else:
+        print("OS not supported yet.")
+        sys.exit(1)
     driver.get(url)
 
     while True:
