@@ -48,6 +48,8 @@ SENSOR_KEY_MAX_AUTO_BASAL_RATE = "max_auto_basal_rate"
 SENSOR_KEY_SG_BELOW_LIMIT = "sg_below_limit"
 SENSOR_KEY_LAST_MEAL_MARKER = "last_marker_meal"
 SENSOR_KEY_LAST_MEAL_MARKER_ATTRS = "last_marker_meal_attributes"
+SENSOR_KEY_ACTIVE_NOTIFICATION = "active_notification"
+SENSOR_KEY_ACTIVE_NOTIFICATION_ATTRS = "active_notification_attributes"
 SENSOR_KEY_LAST_INSULIN_MARKER = "last_marker_insulin"
 SENSOR_KEY_LAST_INSULIN_MARKER_ATTRS = "last_marker_insulin_attributes"
 SENSOR_KEY_LAST_AUTO_BASAL_DELIVERY_MARKER = "last_marker_auto_basal_delivery"
@@ -325,6 +327,15 @@ SENSORS = (
         state_class=None,
         device_class=SensorDeviceClass.TIMESTAMP,
         icon="mdi:calendar-alert",
+        entity_category=None,
+    ),
+    SensorEntityDescription(
+        key=SENSOR_KEY_ACTIVE_NOTIFICATION,
+        name="Active Notification",
+        native_unit_of_measurement=None,
+        state_class=None,
+        device_class=SensorDeviceClass.TIMESTAMP,
+        icon="mdi:note",
         entity_category=None,
     ),
     SensorEntityDescription(

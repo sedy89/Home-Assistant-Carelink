@@ -55,6 +55,8 @@ from .const import (
     SENSOR_KEY_SG_BELOW_LIMIT,
     SENSOR_KEY_LAST_MEAL_MARKER,
     SENSOR_KEY_LAST_MEAL_MARKER_ATTRS,
+    SENSOR_KEY_ACTIVE_NOTIFICATION,
+    SENSOR_KEY_ACTIVE_NOTIFICATION_ATTRS,
     SENSOR_KEY_LAST_INSULIN_MARKER,
     SENSOR_KEY_LAST_INSULIN_MARKER_ATTRS,
     SENSOR_KEY_LAST_AUTO_BASAL_DELIVERY_MARKER,
@@ -85,9 +87,13 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def convert_date_to_isodate(date):
-    date_iso = re.sub("\.\d{3}Z$", "+00:00", date)
-
-    return datetime.fromisoformat(date_iso).replace(tzinfo=None)
+    date_iso = re.compile("([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2})")
+    m = date_iso.search(date)
+    if m:
+        dt = datetime.fromisoformat(m.group(1))
+    else:
+        dt = datetime.fromisoformat(date.replace(".000-00:00", ""))
+    return dt
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -274,11 +280,21 @@ class CarelinkCoordinator(DataUpdateCoordinator):
 
             date_time_local = convert_date_to_isodate(last_alarm["datetime"])
 
+            last_alarm["datetime"]=date_time_local
+            
             data[SENSOR_KEY_LAST_ALARM] = date_time_local.replace(tzinfo=timezone)
+            last_alarm["messageId"]=last_alarm["messageId"].replace("BC_SID_", "").replace("BC_MESSAGE_", "")
             data[SENSOR_KEY_LAST_ALARM_ATTRS] = last_alarm
+            active_notification = get_active_notification(last_alarm, recent_data["notificationHistory"])
+
+            if active_notification is not None:
+                data[SENSOR_KEY_ACTIVE_NOTIFICATION] = date_time_local.replace(tzinfo=timezone)
+                data[SENSOR_KEY_ACTIVE_NOTIFICATION_ATTRS] = last_alarm
         else:
             data[SENSOR_KEY_LAST_ALARM] = None
             data[SENSOR_KEY_LAST_ALARM_ATTRS] = {}
+            data[SENSOR_KEY_ACTIVE_NOTIFICATION] = UNAVAILABLE
+            data[SENSOR_KEY_ACTIVE_NOTIFICATION_ATTRS] = UNAVAILABLE
 
         if (
             recent_data["basal"] is not None
@@ -459,6 +475,25 @@ def get_sg(sgs: list, pos: int) -> dict:
         )
         return None
 
+def get_active_notification(last_alarm: list, notifications: list) -> dict:
+    """Retrieve active notification from notifications list"""
+    try:
+        filtered_array = notifications["clearedNotifications"]
+        if filtered_array:
+            sorted_array = sorted(
+                filtered_array,
+                key=lambda x: convert_date_to_isodate(x["dateTime"]),
+                reverse=True,
+            )
+            for entry in sorted_array:
+                if last_alarm["referenceGUID"] == entry["referenceGUID"]:
+                    return None
+            return last_alarm
+    except Exception as error:
+        _LOGGER.error(
+            "Check if your Carelink data contains an active notification, it seems to be missing.", error
+        )
+        return last_alarm
 def get_last_marker(marker_type: str, markers: list) -> dict:
     """Retrieve last marker from type in 24h marker list"""
 

@@ -32,6 +32,7 @@ import json
 import logging
 import os
 import base64
+import aiofiles
 
 import httpx
 
@@ -409,8 +410,9 @@ class CarelinkClient:
         token_data = None
         if os.path.isfile(filename):
             try:
-                token_data = json.loads(open(filename, "r").read())
-            except json.JSONDecodeError:
+                async with aiofiles.open(filename,  mode="r") as f:
+                    token_data = json.loads(await f.read())
+            except:
                 printdbg("ERROR: failed parsing token file %s" % filename)
             cfg_complete=True
             if token_data is not None:
