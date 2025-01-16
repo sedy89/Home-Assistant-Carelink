@@ -33,7 +33,7 @@ VERSION = "0.4"
 # Constants
 AUTH_EXPIRE_DEADLINE_MINUTES = 10
 CON_CONTEXT_AUTH = "custom_components/carelink/logindata.json"
-CARELINK_CONFIG_URL = "https://clcloud.minimed.eu/connect/carepartner/v11/discover/android/3.1"
+CARELINK_CONFIG_URL = "https://clcloud.minimed.eu/connect/carepartner/v11/discover/android/3.3"
 AUTH_ERROR_CODES = [401,403]
 
 DEBUG = False
@@ -234,7 +234,7 @@ class CarelinkClient:
                 )
             sso_config = resp.json()
             sso_base_url = f"https://{sso_config['server']['hostname']}:{sso_config['server']['port']}/{sso_config['server']['prefix']}"
-            token_url = sso_base_url + sso_config["oauth"]["system_endpoints"]["token_endpoint_path"]
+            token_url = sso_base_url + sso_config["system_endpoints"]["token_endpoint_path"]
             config["token_url"] = token_url
         except Exception as e:
             printdbg(e)

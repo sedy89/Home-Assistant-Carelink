@@ -163,6 +163,8 @@ class CarelinkCoordinator(DataUpdateCoordinator):
         recent_data = await self.client.get_recent_data()
         if recent_data is None:
             recent_data = dict()
+        if 'patientData' in recent_data:
+            recent_data=recent_data['patientData']
         try:
             if recent_data is not None and "clientTimeZoneName" in recent_data:
                 client_timezone = recent_data["clientTimeZoneName"]
@@ -189,7 +191,7 @@ class CarelinkCoordinator(DataUpdateCoordinator):
         if self.uploader:
             await self.uploader.send_recent_data(recent_data, timezone)
 
-        recent_data["sLastSensorTime"] = recent_data.setdefault("sLastSensorTime", "")
+        recent_data["lastConduitDateTime"] = recent_data.setdefault("lastConduitDateTime", "")
         recent_data["activeInsulin"] = recent_data.setdefault("activeInsulin", {})
         recent_data["basal"] = recent_data.setdefault("basal", {})
         recent_data["lastAlarm"] = recent_data.setdefault("lastAlarm", {})
@@ -198,8 +200,8 @@ class CarelinkCoordinator(DataUpdateCoordinator):
 
         # Last Update fetch
 
-        if recent_data["sLastSensorTime"]:
-            date_time_local = convert_date_to_isodate(recent_data["sLastSensorTime"])
+        if recent_data["lastConduitDateTime"]:
+            date_time_local = convert_date_to_isodate(recent_data["lastConduitDateTime"])
             data[SENSOR_KEY_UPDATE_TIMESTAMP] = date_time_local.replace(tzinfo=timezone)
 
         # Last Glucose level sensors
@@ -208,7 +210,7 @@ class CarelinkCoordinator(DataUpdateCoordinator):
         prev_sg = get_sg(recent_data["sgs"], 1)
 
         if current_sg:
-            date_time_local = convert_date_to_isodate(current_sg["datetime"])
+            date_time_local = convert_date_to_isodate(current_sg["timestamp"])
             data[SENSOR_KEY_LASTSG_TIMESTAMP] = date_time_local.replace(tzinfo=timezone)
             data[SENSOR_KEY_LASTSG_MMOL] = float(round(current_sg["sg"] * 0.0555, 2))
             data[SENSOR_KEY_LASTSG_MGDL] = current_sg["sg"]
@@ -218,7 +220,7 @@ class CarelinkCoordinator(DataUpdateCoordinator):
         # Sensors
 
         data[SENSOR_KEY_PUMP_BATTERY_LEVEL] = recent_data.setdefault(
-            "medicalDeviceBatteryLevelPercent", UNAVAILABLE
+            "pumpBatteryLevelPercent", UNAVAILABLE
         )
         data[SENSOR_KEY_CONDUIT_BATTERY_LEVEL] = recent_data.setdefault(
             "conduitBatteryLevel", UNAVAILABLE
@@ -274,7 +276,7 @@ class CarelinkCoordinator(DataUpdateCoordinator):
 
             last_alarm = recent_data["lastAlarm"]
 
-            date_time_local = convert_date_to_isodate(last_alarm["datetime"])
+            date_time_local = convert_date_to_isodate(last_alarm["dateTime"])
 
             last_alarm["datetime"]=date_time_local
             
@@ -409,7 +411,7 @@ class CarelinkCoordinator(DataUpdateCoordinator):
         # Device info
 
         data[DEVICE_PUMP_SERIAL] = recent_data.setdefault(
-            "medicalDeviceSerialNumber", UNAVAILABLE
+            "conduitSerialNumber", UNAVAILABLE
         )
         data[DEVICE_PUMP_NAME] = (
             recent_data.setdefault("firstName", "Name")
@@ -456,7 +458,7 @@ def get_sg(sgs: list, pos: int) -> dict:
         array = [sg for sg in sgs if "sensorState" in sg.keys() and sg["sensorState"] == "NO_ERROR_MESSAGE"]
         sorted_array = sorted(
             array,
-            key=lambda x: convert_date_to_isodate(x["datetime"]),
+            key=lambda x: convert_date_to_isodate(x["timestamp"]),
             reverse=True,
         )
 
@@ -478,7 +480,7 @@ def get_active_notification(last_alarm: list, notifications: list) -> dict:
         if filtered_array:
             sorted_array = sorted(
                 filtered_array,
-                key=lambda x: convert_date_to_isodate(x["dateTime"]),
+                key=lambda x: convert_date_to_isodate(x["timestamp"]),
                 reverse=True,
             )
             for entry in sorted_array:
@@ -498,15 +500,15 @@ def get_last_marker(marker_type: str, markers: list) -> dict:
         filtered_array = [marker for marker in markers if marker["type"] == marker_type]
         sorted_array = sorted(
             filtered_array,
-            key=lambda x: convert_date_to_isodate(x["dateTime"]),
+            key=lambda x: convert_date_to_isodate(x["timestamp"]),
             reverse=True,
         )
 
         last_marker = sorted_array[0]
-        map(last_marker.pop, ["version", "kind", "index"])
+        map(last_marker.pop, ["version", "kind", "index", "views"])
 
         return {
-            "DATETIME": convert_date_to_isodate(last_marker["dateTime"]),
+            "DATETIME": convert_date_to_isodate(last_marker["timestamp"]),
             "ATTRS": last_marker,
         }
     except (IndexError, KeyError) as index_error:
