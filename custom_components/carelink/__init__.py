@@ -87,13 +87,9 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def convert_date_to_isodate(date):
-    date_iso = re.compile("([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2})")
-    m = date_iso.search(date)
-    if m:
-        dt = datetime.fromisoformat(m.group(1))
-    else:
-        dt = datetime.fromisoformat(date.replace(".000-00:00", ""))
-    return dt
+    date_iso = re.sub(r"\.\d{3}Z$", "+00:00", date)
+
+    return datetime.fromisoformat(date_iso).replace(tzinfo=None)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -494,6 +490,7 @@ def get_active_notification(last_alarm: list, notifications: list) -> dict:
             "Check if your Carelink data contains an active notification, it seems to be missing.", error
         )
         return last_alarm
+
 def get_last_marker(marker_type: str, markers: list) -> dict:
     """Retrieve last marker from type in 24h marker list"""
 
