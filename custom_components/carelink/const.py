@@ -335,7 +335,7 @@ SENSORS = (
         native_unit_of_measurement=None,
         state_class=None,
         device_class=SensorDeviceClass.TIMESTAMP,
-        icon="mdi:note",
+        icon="mdi:alarm-light",
         entity_category=None,
     ),
     SensorEntityDescription(
@@ -476,6 +476,24 @@ BINARY_SENSORS = (
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
 )
+
+CARELINK_CODE_MAP = {
+    817 : "BC_SID_SG_APPROACH_HIGH_LIMIT_CHECK_BG",
+    776 : "BC_SID_WAIT_AT_LEAST_15_MINUTES",
+    780 : "BC_SID_MOVE_PUMP_CLOSER_TO_MINILINK",
+    781 : "BC_SID_MOVE_AWAY_FROM_ELECTR_DEVICES",
+    795 : "BC_SID_ENSURE_CONNECTION_SECURE",
+    820 : "BC_MESSAGE_BASAL_STARTED",
+    798 : "BC_SID_IF_NEW_SENSR_SELCT_START_NEW_ELSE_REWIND",
+    775 : "BC_SID_CHECK_BG_AND_CALIBRATE_SENSOR",
+    869 : "BC_SID_CHECK_BG_AND_CALIBRATE_SENSOR_TO_RECEIVE",
+    817 : "BC_SID_SG_APPROACH_HIGH_LIMIT_CHECK_BG",
+    784 : "BC_SID_SG_RISE_RAPID",
+    105 : "BC_MESSAGE_TIME_REMAINING_CHANGE_RESERVOIR",
+    816 : "BC_SID_HIGH_SG_CHECK_BG",
+    827 : "BC_MESSAGE_SG_UNDER_50_MG_DL",
+    802 : "BC_SID_LOW_SD_CHECK_BG"
+}
 
 MS_TIMEZONE_TO_IANA_MAP = {
     "Egypt Standard Time": "Africa/Cairo",

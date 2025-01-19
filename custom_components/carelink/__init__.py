@@ -79,6 +79,7 @@ from .const import (
     SENSOR_KEY_MEDICAL_DEVICE_SYSTEM_ID,
     MS_TIMEZONE_TO_IANA_MAP,
     SENSOR_KEY_TIME_TO_NEXT_CALIB_HOURS,
+    CARELINK_CODE_MAP,
 )
 
 PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BINARY_SENSOR]
@@ -161,10 +162,12 @@ class CarelinkCoordinator(DataUpdateCoordinator):
 
         await self.client.login()
         recent_data = await self.client.get_recent_data()
-        if recent_data is None:
-            recent_data = dict()
-        if 'patientData' in recent_data:
+        
+        if recent_data and 'patientData' in recent_data:
             recent_data=recent_data['patientData']
+        elif recent_data is None:
+            recent_data = dict()
+        _LOGGER.debug("Before Data parsing %s", recent_data)
         try:
             if recent_data is not None and "clientTimeZoneName" in recent_data:
                 client_timezone = recent_data["clientTimeZoneName"]
@@ -193,7 +196,7 @@ class CarelinkCoordinator(DataUpdateCoordinator):
 
         recent_data["lastConduitDateTime"] = recent_data.setdefault("lastConduitDateTime", "")
         recent_data["activeInsulin"] = recent_data.setdefault("activeInsulin", {})
-        recent_data["basal"] = recent_data.setdefault("basal", {})
+        recent_data["therapyAlgorithmState"] = recent_data.setdefault("therapyAlgorithmState", {})
         recent_data["lastAlarm"] = recent_data.setdefault("lastAlarm", {})
         recent_data["markers"] = recent_data.setdefault("markers", [])
         recent_data["sgs"] = recent_data.setdefault("sgs", [])
@@ -251,7 +254,7 @@ class CarelinkCoordinator(DataUpdateCoordinator):
             "timeToNextCalibHours", UNAVAILABLE
         )
 
-        if "amount" in recent_data["activeInsulin"]:
+        if recent_data["activeInsulin"] and "amount" in recent_data["activeInsulin"]:
             # Active insulin sensor
 
             active_insulin = recent_data["activeInsulin"]
@@ -259,6 +262,8 @@ class CarelinkCoordinator(DataUpdateCoordinator):
             data[SENSOR_KEY_ACTIVE_INSULIN] = recent_data["activeInsulin"].setdefault(
                 "amount", UNAVAILABLE
             )
+            if data[SENSOR_KEY_ACTIVE_INSULIN]:
+                data[SENSOR_KEY_ACTIVE_INSULIN] = round(float(data[SENSOR_KEY_ACTIVE_INSULIN]), 2)
 
             if "datetime" in active_insulin:
 
@@ -271,17 +276,16 @@ class CarelinkCoordinator(DataUpdateCoordinator):
             data[SENSOR_KEY_ACTIVE_INSULIN] = UNAVAILABLE
             data[SENSOR_KEY_ACTIVE_INSULIN_ATTRS] = {}
 
-        if "datetime" in recent_data["lastAlarm"]:
+        if "dateTime" in recent_data["lastAlarm"]:
             # Last alarm sensor
-
             last_alarm = recent_data["lastAlarm"]
 
             date_time_local = convert_date_to_isodate(last_alarm["dateTime"])
 
-            last_alarm["datetime"]=date_time_local
+            last_alarm["dateTime"]=date_time_local
+            last_alarm["messageId"] = CARELINK_CODE_MAP.setdefault(int(last_alarm["faultId"]), "UNKNOWN")
             
             data[SENSOR_KEY_LAST_ALARM] = date_time_local.replace(tzinfo=timezone)
-            last_alarm["messageId"]=last_alarm["messageId"].replace("BC_SID_", "").replace("BC_MESSAGE_", "")
             data[SENSOR_KEY_LAST_ALARM_ATTRS] = last_alarm
             active_notification = get_active_notification(last_alarm, recent_data["notificationHistory"])
 
@@ -291,15 +295,15 @@ class CarelinkCoordinator(DataUpdateCoordinator):
         else:
             data[SENSOR_KEY_LAST_ALARM] = None
             data[SENSOR_KEY_LAST_ALARM_ATTRS] = {}
-            data[SENSOR_KEY_ACTIVE_NOTIFICATION] = UNAVAILABLE
+            data[SENSOR_KEY_ACTIVE_NOTIFICATION] = "None"
             data[SENSOR_KEY_ACTIVE_NOTIFICATION_ATTRS] = UNAVAILABLE
 
         if (
-            recent_data["basal"] is not None
-            and "activeBasalPattern" in recent_data["basal"]
+            recent_data["therapyAlgorithmState"] is not None
+            and "autoModeShieldState" in recent_data["therapyAlgorithmState"]
         ):
-            data[SENSOR_KEY_ACTIVE_BASAL_PATTERN] = recent_data["basal"].setdefault(
-                "activeBasalPattern", UNAVAILABLE
+            data[SENSOR_KEY_ACTIVE_BASAL_PATTERN] = recent_data["therapyAlgorithmState"].setdefault(
+                "autoModeShieldState", UNAVAILABLE
             )
         else:
             data[SENSOR_KEY_ACTIVE_BASAL_PATTERN] = UNAVAILABLE
@@ -480,11 +484,11 @@ def get_active_notification(last_alarm: list, notifications: list) -> dict:
         if filtered_array:
             sorted_array = sorted(
                 filtered_array,
-                key=lambda x: convert_date_to_isodate(x["timestamp"]),
+                key=lambda x: convert_date_to_isodate(x["dateTime"]),
                 reverse=True,
             )
             for entry in sorted_array:
-                if last_alarm["referenceGUID"] == entry["referenceGUID"]:
+                if last_alarm["GUID"] == entry["referenceGUID"]:
                     return None
             return last_alarm
     except Exception as error:
@@ -505,8 +509,8 @@ def get_last_marker(marker_type: str, markers: list) -> dict:
         )
 
         last_marker = sorted_array[0]
-        map(last_marker.pop, ["version", "kind", "index", "views"])
-
+        for k in ["version", "kind", "index", "views"]:
+            last_marker.pop(k, None)
         return {
             "DATETIME": convert_date_to_isodate(last_marker["timestamp"]),
             "ATTRS": last_marker,
