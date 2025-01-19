@@ -289,14 +289,17 @@ class CarelinkCoordinator(DataUpdateCoordinator):
             data[SENSOR_KEY_LAST_ALARM_ATTRS] = last_alarm
             active_notification = get_active_notification(last_alarm, recent_data["notificationHistory"])
 
-            if active_notification is not None:
+            if active_notification:
                 data[SENSOR_KEY_ACTIVE_NOTIFICATION] = date_time_local.replace(tzinfo=timezone)
                 data[SENSOR_KEY_ACTIVE_NOTIFICATION_ATTRS] = last_alarm
+            else:
+                data[SENSOR_KEY_ACTIVE_NOTIFICATION] = UNAVAILABLE
+                data[SENSOR_KEY_ACTIVE_NOTIFICATION_ATTRS] = {}
         else:
-            data[SENSOR_KEY_LAST_ALARM] = None
+            data[SENSOR_KEY_LAST_ALARM] = UNAVAILABLE
             data[SENSOR_KEY_LAST_ALARM_ATTRS] = {}
-            data[SENSOR_KEY_ACTIVE_NOTIFICATION] = "None"
-            data[SENSOR_KEY_ACTIVE_NOTIFICATION_ATTRS] = UNAVAILABLE
+            data[SENSOR_KEY_ACTIVE_NOTIFICATION] = UNAVAILABLE
+            data[SENSOR_KEY_ACTIVE_NOTIFICATION_ATTRS] = {}
 
         if (
             recent_data["therapyAlgorithmState"] is not None
