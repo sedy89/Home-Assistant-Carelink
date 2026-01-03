@@ -190,7 +190,12 @@ class CarelinkCoordinator(DataUpdateCoordinator):
 
         _LOGGER.debug("Using timezone %s", DEFAULT_TIME_ZONE)
 
+        # nightscout uploader
+        if self.uploader:
+            await self.uploader.send_recent_data(recent_data, timezone)
+
         recent_data["lastConduitDateTime"] = recent_data.setdefault("lastConduitDateTime", "")
+        recent_data["activeInsulin"] = recent_data.setdefault("activeInsulin", {})
         recent_data["therapyAlgorithmState"] = recent_data.setdefault("therapyAlgorithmState", {})
         recent_data["lastAlarm"] = recent_data.setdefault("lastAlarm", {})
         recent_data["markers"] = recent_data.setdefault("markers", [])
@@ -249,7 +254,7 @@ class CarelinkCoordinator(DataUpdateCoordinator):
             "timeToNextCalibHours", UNAVAILABLE
         )
 
-        if "activeInsulin" in recent_data and recent_data["activeInsulin"]:
+        if recent_data["activeInsulin"]:
             if "amount" in recent_data["activeInsulin"]:
                 # Active insulin sensor
                 active_insulin = recent_data["activeInsulin"]
@@ -448,10 +453,6 @@ class CarelinkCoordinator(DataUpdateCoordinator):
             ].setdefault("systemId", UNAVAILABLE)
 
         _LOGGER.debug("_async_update_data: %s", data)
-
-        # nightscout uploader
-        if self.uploader:
-            await self.uploader.send_recent_data(recent_data, timezone)
 
         return data
 
