@@ -21,6 +21,7 @@
 #  Changelog:
 #
 #    28/12/2023 - Initial version
+#    14/03/2025 - Updated discovery_url, based on https://github.com/ondrej1024/carelink-python-client/pull/23
 #
 #
 #  Dependencies:
@@ -176,7 +177,7 @@ def do_login(endpoint_config):
 	captcha_url = providers["providers"][0]["provider"]["auth_url"]
 
 	# step 3 captcha login and consent
-	print(f"captcha url: {captcha_url}")
+	print("captcha url received")  # Omit sensitive details from logs
 	captcha_code, captcha_sso_state = do_captcha(captcha_url, sso_config["oauth"]["client"]["client_ids"][0]['redirect_uri'])
 	print(f"sso state after captcha: {captcha_sso_state}")
 
@@ -256,7 +257,7 @@ def read_data_file(file):
 # config
 is_debug = False
 logindata_file = 'logindata.json'
-discovery_url = 'https://clcloud.minimed.eu/connect/carepartner/v6/discover/android/3.1'
+discovery_url = 'https://clcloud.minimed.eu/connect/carepartner/v11/discover/android/3.2'
 rsa_keysize = 2048
 
 def main():
